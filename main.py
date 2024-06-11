@@ -15,6 +15,21 @@ tool_data = core_functions.load_tools_from_directory('tools')
 
 assistant_id = get_assistant_id()
 
+# Initialize Google Sheets and Drive
+drive_folder_id = core_functions.GOOGLE_DRIVE_FOLDER_ID
+sheet_name = core_functions.SHEET_NAME
+
+# List spreadsheets in the specified folder
+core_functions.list_spreadsheets_in_folder(drive_folder_id)
+
+# Open the specified spreadsheet in the specified folder
+try:
+    spreadsheet = core_functions.open_spreadsheet_in_folder(drive_folder_id, sheet_name)
+    sheet = spreadsheet.sheet1
+except FileNotFoundError as e:
+    logging.error(e)
+    sheet = None  # Define `sheet` as None if the spreadsheet is not found
+
 @app.route('/start', methods=['GET'])
 def start_conversation():
     platform = request.args.get('platform', 'Not Specified')
@@ -23,7 +38,12 @@ def start_conversation():
     thread = client.beta.threads.create()
     logging.info(f" -> New thread created with ID: {thread.id}")
 
-    # core_functions.add_thread(thread.id, platform, username)
+    # Add thread to Google Sheet if available
+    if sheet is not None:
+        core_functions.add_thread_to_sheet(thread.id, platform, sheet)
+    else:
+        logging.error("Sheet not defined. Cannot add thread to sheet.")
+        return jsonify({"error": "Sheet not defined"}), 500
 
     return jsonify({"thread_id": thread.id})
 

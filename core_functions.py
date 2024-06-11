@@ -7,16 +7,32 @@ import openai
 import time
 import json
 import re
+import gspread
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+from datetime import datetime
 
-
+# Load environment variables
 AIRTABLE_DB_URL = os.getenv('AIRTABLE_DB_URL')
 AIRTABLE_API_KEY = f"Bearer {os.getenv('AIRTABLE_API_KEY')}"
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 ASSISTANT_ID = os.getenv('ASSISTANT_ID')
+GOOGLE_SHEETS_CREDENTIALS_PATH = os.getenv('SHEETS_CREDENTIALS')
+GOOGLE_DRIVE_FOLDER_ID = os.getenv('DRIVE_FOLDER_ID')
+SHEET_NAME = os.getenv('SHEET_NAME')
 
 if not OPENAI_API_KEY:
     raise ValueError("No OpenAI API key found in environment variables")
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+# Google Sheets and Drive configuration
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+creds = Credentials.from_service_account_file(GOOGLE_SHEETS_CREDENTIALS_PATH, scopes=scope)
+sheets_client = gspread.authorize(creds)
+drive_service = build('drive', 'v3', credentials=creds)
 
 def check_openai_version():
     required_version = version.parse("1.1.1")
@@ -125,3 +141,37 @@ def get_assistant_id():
         raise ValueError("Assistant ID not found in environment variables. Please set ASSISTANT_ID.")
     print("Loaded existing assistant ID from environment variable.")
     return assistant_id
+
+# Google Sheets and Drive functions
+def list_spreadsheets_in_folder(folder_id):
+    query = f"'{folder_id}' in parents and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
+    results = drive_service.files().list(q=query, spaces='drive').execute()
+    items = results.get('files', [])
+
+    if not items:
+        logging.info('No spreadsheets found in folder.')
+    else:
+        logging.info('Spreadsheets found in folder:')
+        for item in items:
+            logging.info(f"{item['name']} (ID: {item['id']})")
+
+def open_spreadsheet_in_folder(folder_id, spreadsheet_name):
+    query = f"'{folder_id}' in parents and name='{spreadsheet_name}' and mimeType='application/vnd.google-apps.spreadsheet' and trashed=false"
+    results = drive_service.files().list(q=query, spaces='drive').execute()
+    items = results.get('files', [])
+
+    if not items:
+        raise FileNotFoundError(f"Spreadsheet '{spreadsheet_name}' not found in folder '{folder_id}'")
+
+    spreadsheet_id = items[0]['id']
+    return sheets_client.open_by_key(spreadsheet_id)
+
+def add_thread_to_sheet(thread_id, platform, sheet):
+    try:
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        sheet.append_row([thread_id, platform, '', current_time])
+        num_rows = len(sheet.get_all_values())
+        sheet.update_cell(num_rows, 5, "Arrived")
+        logging.info("Thread added to sheet successfully and 'Arrived' set.")
+    except Exception as e:
+        logging.error(f"An error occurred while adding the thread to the sheet: {e}")
