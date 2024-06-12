@@ -58,7 +58,11 @@ def start_conversation():
     thread = client.beta.threads.create()
     logging.info(f"New thread created with ID: {thread.id}")
 
-    add_thread_to_sheet(thread.id, platform, username, sheet)
+    if sheet is not None:
+        add_thread_to_sheet(thread.id, platform, username, sheet)
+    else:
+        logging.error("Sheet not defined. Cannot add thread to sheet.")
+        return jsonify({"error": "Sheet not defined"}), 500
 
     # Añadir el hilo a Airtable
     # add_thread_to_airtable(thread.id, platform, username)
@@ -86,8 +90,7 @@ def chat():
                                           assistant_id=assistant_id)
 
     logging.info(f"Run ID: {run.id}")
-    result = process_tool_calls(client, thread_id, run.id, tool_data)
-    return jsonify(result)
+    return jsonify({"run_id": run.id})
 
 
 @app.route('/check', methods=['POST'])
