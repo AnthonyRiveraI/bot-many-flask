@@ -2,19 +2,11 @@
 import logging
 from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
-from core_functions import (
-    add_thread_to_sheet,
-    add_thread_to_airtable,
-    client,
-    process_tool_calls,
-    get_assistant_id,
-    check_openai_version,
-    load_tools_from_directory,
-    get_folder_by_id,
-    open_spreadsheet_in_folder,
-    check_api_key,
-    SHEET_NAME
-)
+from core_functions import (add_thread_to_sheet, add_thread_to_airtable,
+                            client, process_tool_calls, get_assistant_id,
+                            check_openai_version, load_tools_from_directory,
+                            get_folder_by_id, open_spreadsheet_in_folder,
+                            check_api_key, SHEET_NAME)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -53,6 +45,7 @@ except FileNotFoundError as e:
     logging.error(e)
     sheet = None  # Definir `sheet` como None si no se encuentra la hoja de cálculo
 
+
 @app.route('/start', methods=['GET'])
 @limiter.limit("50 per day")  # Limitar a 50 conversaciones por día
 def start_conversation():
@@ -71,6 +64,7 @@ def start_conversation():
     # add_thread_to_airtable(thread.id, platform, username)
 
     return jsonify({"thread_id": thread.id})
+
 
 @app.route('/chat', methods=['POST'])
 @limiter.limit("100 per day")  # Limitar a 100 mensajes por día
@@ -95,6 +89,7 @@ def chat():
     result = process_tool_calls(client, thread_id, run.id, tool_data)
     return jsonify(result)
 
+
 @app.route('/check', methods=['POST'])
 @limiter.limit("200 per day")
 def check_run_status():
@@ -109,21 +104,25 @@ def check_run_status():
     result = process_tool_calls(client, thread_id, run_id, tool_data)
     return jsonify(result)
 
+
 @app.errorhandler(400)
 def handle_400_error(e):
     logging.error(f"Bad Request: {e.description}")
     return jsonify(error="Bad Request", message=e.description), 400
+
 
 @app.errorhandler(401)
 def handle_401_error(e):
     logging.error(f"Unauthorized: {e.description}")
     return jsonify(error="Unauthorized", message=e.description), 401
 
+
 @app.errorhandler(500)
 def handle_500_error(e):
     logging.error(f"Internal Server Error: {e}")
     return jsonify(error="Internal Server Error",
                    message="An unexpected error occurred"), 500
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)
