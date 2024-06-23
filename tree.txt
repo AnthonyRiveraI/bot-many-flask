@@ -1,0 +1,11 @@
+tools/
+utility_tools/
+├── 1_Creacion_del_prompt.txt
+├── 2_Codigo_ChatGPT.txt
+├── user_interest_request.py
+Transcript/
+├── tema.py
+├── transcript.py
+core_functions.py
+key.json
+main.py

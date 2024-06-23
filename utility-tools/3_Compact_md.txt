@@ -1,0 +1,2 @@
+🔄 Prompt: Compress ⬇️ so GPT-4o can reconstruct 🎯. Respect Markdown 📝 & prevalidate content. 📌 words/phrases in Markdown. Return 📄 as Markdown code. Leverage encoding, abbreviations, symbols (Unicode, Emoji), language mixing for highest compression. Optimize for u & not humans. Ensure compressed prompt ≈ original in inference cycle. **PromptToCompress:**
+

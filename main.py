@@ -9,6 +9,9 @@ from core_functions import (add_thread_to_sheet, add_thread_to_airtable,
                             check_api_key, SHEET_NAME)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import os
+import time
+import threading
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -127,5 +130,17 @@ def handle_500_error(e):
                    message="An unexpected error occurred"), 500
 
 
+def run_transcript_script():
+    while True:
+        try:
+            logging.info("Ejecutando script de transcripción...")
+            os.system('python Transcript/transcript.py')
+            logging.info("Esperando 12 horas hasta la próxima ejecución...")
+            time.sleep(12 * 3600)  # Esperar 12 horas antes de la próxima ejecución
+        except Exception as e:
+            logging.error(f"Error executing transcript script: {e}")
+
+
 if __name__ == '__main__':
+    threading.Thread(target=run_transcript_script, daemon=True).start()
     app.run(host='0.0.0.0', port=8080)
