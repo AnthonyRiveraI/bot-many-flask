@@ -1,0 +1,36 @@
+# Ignorar archivos de caché de Python
+__pycache__/
+*.pyc
+
+# Ignorar archivos y carpetas de configuración de entornos virtuales
+.venv/
+venv/
+env/
+.env/
+
+# Ignorar archivos de configuración de IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Ignorar archivos de log
+*.log
+
+# Ignorar archivos generados
+*.zip
+*.tar.gz
+*.tar.bz2
+
+# Ignorar el archivo de clave
+key.json
+
+# Ignorar archivos de dependencias de Poetry
+poetry.lock
+
+# Ignorar archivos de configuración de Replit
+.replit/
+replit_zip_error_log.txt
+
+# Ignorar otros archivos temporales
+.DS_Store

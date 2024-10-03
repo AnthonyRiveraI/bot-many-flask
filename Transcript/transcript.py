@@ -21,11 +21,15 @@ scope = [
 ]
 
 try:
-    creds = Credentials.from_service_account_file(SHEETS_CREDENTIALS, scopes=scope)
+    creds = Credentials.from_service_account_file(SHEETS_CREDENTIALS,
+                                                  scopes=scope)
 except Exception as e:
-    raise ValueError(f"Error loading Sheets credentials from path: {SHEETS_CREDENTIALS}, {e}")
+    raise ValueError(
+        f"Error loading Sheets credentials from path: {SHEETS_CREDENTIALS}, {e}"
+    )
 
 sheets_client = gspread.authorize(creds)
+
 
 def fetch_sheet_records():
     try:
@@ -40,6 +44,7 @@ def fetch_sheet_records():
         print(f"Error al obtener registros de Google Sheets: {e}")
         return []
 
+
 def fetch_openai_data(thread_id):
     url = f"https://api.openai.com/v1/threads/{thread_id}/messages"
     headers = {
@@ -51,8 +56,11 @@ def fetch_openai_data(thread_id):
     if response.status_code == 200:
         return response.json()
     else:
-        print(f"Failed to fetch thread data: {response.status_code}, Response: {response.text}")
+        print(
+            f"Failed to fetch thread data: {response.status_code}, Response: {response.text}"
+        )
         return {}
+
 
 def process_transcript(messages):
     if not messages:
@@ -60,20 +68,28 @@ def process_transcript(messages):
 
     # Ordenar los mensajes de más antiguo a más reciente
     sorted_messages = sorted(messages, key=lambda x: x['created_at'])
-    transcript = "\n".join([f"{msg['role']}: {msg['content'][0]['text']['value']}" for msg in sorted_messages])
+    transcript = "\n".join([
+        f"{msg['role']}: {msg['content'][0]['text']['value']}"
+        for msg in sorted_messages
+    ])
     return transcript
+
 
 def count_user_messages(transcript):
     return len(re.findall(r'user:', transcript))
 
+
 def classify_data(transcript, prompt_template):
     response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt_template.format(transcript=transcript)}],
+        model="gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": prompt_template.format(transcript=transcript)
+        }],
         max_tokens=100,
-        temperature=0.7
-    )
+        temperature=0.7)
     return response.choices[0].message.content.strip()
+
 
 def update_sheet_batch(updates, sheet):
     try:
@@ -81,6 +97,7 @@ def update_sheet_batch(updates, sheet):
         print("Records updated successfully.")
     except Exception as e:
         print(f"Failed to update records: {e}")
+
 
 def main():
     records = fetch_sheet_records()
@@ -102,7 +119,8 @@ def main():
         messages = data.get('data', [])
         if not messages:
             updates.append({
-                'range': f"E{row_number}:I{row_number}",  # Columnas E a I
+                'range':
+                f"E{row_number}:I{row_number}",  # Columnas E a I
                 'values': [["Processed", "EMPTY", "EMPTY", "0", "EMPTY"]]
             })
             continue
@@ -116,17 +134,21 @@ def main():
             lead = classify_data(transcript, lead_prompt)
 
             updates.append({
-                'range': f"E{row_number}:I{row_number}",  # Columnas E a I
-                'values': [["Processed", transcript, tema, user_messages_count, lead]]
+                'range':
+                f"E{row_number}:I{row_number}",  # Columnas E a I
+                'values':
+                [["Processed", transcript, tema, user_messages_count, lead]]
             })
         else:
             updates.append({
-                'range': f"E{row_number}:I{row_number}",  # Columnas E a I
+                'range':
+                f"E{row_number}:I{row_number}",  # Columnas E a I
                 'values': [["EMPTY", "EMPTY", "EMPTY", "0", "EMPTY"]]
             })
 
     if updates:
         update_sheet_batch(updates, sheet)
+
 
 if __name__ == '__main__':
     main()

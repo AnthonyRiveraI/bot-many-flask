@@ -1,0 +1,1 @@
+{"version":2,"languages":{"python-python3-poetry":{"specfileHash":"99db94b08813ccc10984c1fb8a90dbfb","lockfileHash":"69c97cbe4455594341fc7f06867f2713","guessedImports":["packaging","openai","google-api-python-client","Flask","gspread","pytz","google-auth","Flask-Cors","requests","Flask-Limiter"],"guessedImportsHash":"5287644024640bb5c930f7c79fe31762"}}}

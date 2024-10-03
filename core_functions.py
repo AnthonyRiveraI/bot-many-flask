@@ -13,6 +13,7 @@ from flask import request, abort
 import time
 import re
 import json
+import importlib
 
 # Cargar las variables de entorno desde el entorno
 AIRTABLE_DB_URL = os.getenv('AIRTABLE_DB_URL')
@@ -108,39 +109,15 @@ def add_thread_to_sheet(thread_id, platform, username, sheet):
             f"An error occurred while adding the thread to the sheet: {e}")
 
 
-def add_thread_to_airtable(thread_id, platform, username):
-    url = f"{AIRTABLE_DB_URL}"
-    headers = {
-        "Authorization": f"{AIRTABLE_API_KEY}",
-        "Content-Type": "application/json"
-    }
+def clean_markdown(text):
+    # Remove markdown headers
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
 
-    local_timezone = pytz.timezone('America/Mexico_City')
-    current_time = datetime.now(local_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    # Remove bold asterisks
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
 
-    data = {
-        "records": [{
-            "fields": {
-                "Thread_id": thread_id,
-                "Platform": platform,
-                "Username": username,
-                "Status": "Arrived",
-            }
-        }]
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code == 200:
-            logging.info("Thread added to Airtable successfully.")
-        else:
-            logging.error(
-                f"Failed to add thread to Airtable: HTTP Status Code {response.status_code}, Response: {response.text}"
-            )
-    except Exception as e:
-        logging.error(
-            f"An error occurred while adding the thread to Airtable: {e}")
-
+    text = re.sub(r'\[.*?\]\((.*?)\)', r'\1', text)
+    return text
 
 def process_tool_calls(client, thread_id, run_id, tool_data):
     start_time = time.time()
@@ -154,10 +131,13 @@ def process_tool_calls(client, thread_id, run_id, tool_data):
             message_content = messages.data[0].content[0].text.value
             logging.info(f"Message content before cleaning: {message_content}")
 
+            # Clean the message content
+            message_content = clean_markdown(message_content)
+
             message_content = re.sub(r"【.*?†.*?】", '', message_content)
             message_content = re.sub(r'[^\S\r\n]+', ' ',
                                      message_content).strip()
-
+            logging.info(f"Message content after cleaning: {message_content}")
             return {"response": message_content, "status": "completed"}
 
         elif run_status.status == 'requires_action':
@@ -196,7 +176,6 @@ def process_tool_calls(client, thread_id, run_id, tool_data):
 
     logging.info("Run timed out")
     return {"response": "timeout", "status": "timeout"}
-
 
 def load_tools_from_directory(directory):
     tool_data = {"tool_configs": [], "function_map": {}}

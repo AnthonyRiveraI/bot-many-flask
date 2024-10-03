@@ -2,7 +2,7 @@
 import logging
 from flask import Flask, request, jsonify, abort
 from flask_cors import CORS
-from core_functions import (add_thread_to_sheet, add_thread_to_airtable,
+from core_functions import (add_thread_to_sheet,
                             client, process_tool_calls, get_assistant_id,
                             check_openai_version, load_tools_from_directory,
                             get_folder_by_id, open_spreadsheet_in_folder,
@@ -50,11 +50,11 @@ except FileNotFoundError as e:
 
 
 @app.route('/start', methods=['GET'])
-@limiter.limit("50 per day")  # Limitar a 50 conversaciones por día
+# @limiter.limit("50 per day")  # Limitar a 50 conversaciones por día
 def start_conversation():
     # check_api_key()
     platform = request.args.get('platform', 'Not Specified')
-    username = request.args.get('username', 'Anonymous')
+    username = request.args.get('username', 'Not Specified')
 
     logging.info(f"Starting a new conversation from platform: {platform}")
 
@@ -74,7 +74,7 @@ def start_conversation():
 
 
 @app.route('/chat', methods=['POST'])
-@limiter.limit("100 per day")  # Limitar a 100 mensajes por día
+# @limiter.limit("100 per day")  # Limitar a 100 mensajes por día
 def chat():
     # check_api_key()
     data = request.json
@@ -97,7 +97,7 @@ def chat():
 
 
 @app.route('/check', methods=['POST'])
-@limiter.limit("200 per day")
+# @limiter.limit("200 per day")
 def check_run_status():
     # check_api_key()
     data = request.json
@@ -128,7 +128,6 @@ def handle_500_error(e):
     logging.error(f"Internal Server Error: {e}")
     return jsonify(error="Internal Server Error",
                    message="An unexpected error occurred"), 500
-
 
 def run_transcript_script():
     while True:
